@@ -18,7 +18,7 @@ on:
     paths:
       - ".github/workflows/seat_service_release.yml"
       - "seat_service/**"
-      - "vehicle_data_broker/proto/**"
+      - "kuksa_data_broker/proto/**"
   workflow_dispatch:
   workflow_call:
 
@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Build
     container:
-      image: ghcr.io/${{ github.repository }}/oci_kuksa-val-services-ci:prerelease
+      image: ghcr.io/${{ github.repository }}/oci_kuksa-val-services-ci:v0.1.0
       credentials:
         username: ${{ github.repository_owner }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -46,7 +46,7 @@ jobs:
 
       - name: Using the builtin GitHub Cache Action for .conan
         id: cache-conan
-        uses: actions/cache@v3.0.2
+        uses: actions/cache@v3.0.5
         env:
           cache-name: cache-conan-modules
         with:
