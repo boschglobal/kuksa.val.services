@@ -39,9 +39,9 @@ jobs:
       - name: Get tag or user release version
         id: set_version
         run: |
-          GIT_VER="{{ steps.get_git_tag_version.outputs.version }}"
+          GIT_VER="${{ steps.get_git_tag_version.outputs.version }}"
           echo "### Detected tag: $GIT_VER"
-          if [ -n "{{ github.event.inputs.tag }}" ]; then
+          if [ -n "${{ github.event.inputs.tag }}" ]; then
             GIT_VER="${{ github.event.inputs.tag }}"
             echo "Forced release version: $GIT_VER"
             echo "version=${GIT_VER}" >> $GITHUB_OUTPUT
@@ -98,7 +98,7 @@ jobs:
   release-seat-service-image:
     name: "Download and push to ghcr (seat_service)"
     runs-on: ubuntu-latest
-    needs: [ get_version, call_seat_service_release ]
+    needs: [get_version, call_seat_service_release]
     steps:
       - id: repository-name-adjusted
         name: Prepare repository name in lower case for docker upload. This supports repository names in mixed case
@@ -137,7 +137,7 @@ jobs:
     name: "Download and push to ghcr (hvac_service)"
     runs-on: ubuntu-latest
 
-    needs: [ get_version, call_hvac_service_build ]
+    needs: [get_version, call_hvac_service_build]
     steps:
       - id: repository-name-adjusted
         name: Prepare repository name in lower case for docker upload. This supports repository names in mixed case
