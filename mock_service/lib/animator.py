@@ -87,6 +87,8 @@ class ValueAnimator(Animator):
     def value(self):
         if isinstance(self._values[0], int):
             return int(self._value)
+        elif isinstance(self._values[0], float):
+            return float(self._value)
         else:
             return self._value
 

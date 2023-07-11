@@ -61,6 +61,12 @@ python3 -m pip install -r ./requirements.txt
 
 To run mock service, use the provided VSCode task `run-mockservice` which will set up all necessary environment variables and parameters for the service to start up properly.
 
+Alternative:
+```bash
+cd mock
+python3 mockservice.py
+```
+
 # Generating API documentation
 
 API documentation is generated from Python docs and embedded into markdown files for easy rendering on Github without external hosting. The workflow `ensure-docs-up2date` makes sure that the API docs are up to date before merging a pull request. To update the docs, run

@@ -35,6 +35,7 @@ from sdv.databroker.v1.collector_pb2 import (
     RegistrationMetadata,
     UpdateDatapointsRequest,
 )
+from lib.dsl import _mocked_datapoints
 from sdv.databroker.v1.types_pb2 import DataType, Metadata
 
 SERVICE_NAME = "mock_service"
@@ -66,11 +67,12 @@ class MockService(BaseService):
         self._mocked_datapoints: Dict[str, MockedDataPoint] = dict()
         self._behaviors: List[Behavior] = list()
 
+    # this will work if mock.py is provided
     def on_databroker_connected(self):
         """Callback when a connection to the data broker is established."""
         if not self._registered:
             self._read_metadata()
-
+            
             loader_result = PythonDslLoader().load(self._vdb_metadata)
             self._mocked_datapoints = loader_result.mocked_datapoints
             for _, datapoint in self._mocked_datapoints.items():
@@ -85,14 +87,40 @@ class MockService(BaseService):
             self._feed_initial_values()
             self._registered = True
 
+    # this will work on the fly
+    def check_for_new_mocks(self):
+        new_mock_data_exist = False
+        # check if there was a change on the fly
+        for dp in _mocked_datapoints:
+            if not self._mocked_datapoints.__contains__(dp["path"]):
+                print(dp)
+                new_mock_data_exist = True
+
+        if new_mock_data_exist:   
+            loader_result = PythonDslLoader().load(self._vdb_metadata)
+            self._mocked_datapoints = loader_result.mocked_datapoints
+            for _, datapoint in self._mocked_datapoints.items():
+                datapoint.value_listener = self._on_datapoint_updated
+            self._behaviors = loader_result.behavior_dict
+
+            self._behavior_executor = BehaviorExecutor(
+                self._mocked_datapoints, self._behaviors, self._pending_event_list
+            )
+            self._register_datapoints()
+            self._subscribe_to_mocked_datapoints()
+            self._feed_initial_values()
+            if self._registered is False:
+                self._register_datapoints()
+                self._registered = True
+
     def main_loop(self):
         """Main execution loop which checks if behaviors shall be executed."""
         # wait for datapoints to be registered
         while not self._registered:
             time.sleep(1)
-
         try:
             while True:
+                self.check_for_new_mocks()
                 current_tick_time = time.perf_counter()
                 delta_time: float = current_tick_time - self._last_tick
                 self._behavior_executor.execute(delta_time, self._animators)
@@ -108,6 +136,7 @@ class MockService(BaseService):
                     self._animators.remove(animator)
 
                 self._last_tick = time.perf_counter()
+
                 time.sleep(0.1)
         except Exception as exception:
             log.exception(exception)
@@ -192,9 +221,10 @@ class MockService(BaseService):
                 entry.fields.append(Field.FIELD_VALUE)
             request.entries.append(entry)
 
-        response_iter = self._stub_val.Subscribe(request, metadata=self._metadata)
-        self._executor = ThreadPoolExecutor()
-        self._executor.submit(self._mock_update_request_handler, response_iter)
+        if len(self._mocked_datapoints) != 0:
+            response_iter = self._stub_val.Subscribe(request, metadata=self._metadata)
+            self._executor = ThreadPoolExecutor()
+            self._executor.submit(self._mock_update_request_handler, response_iter)
 
     def _register(self, name, data_type, change_type):
         """Register a single data point with data broker."""
