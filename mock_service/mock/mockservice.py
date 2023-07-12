@@ -93,7 +93,6 @@ class MockService(BaseService):
         # check if there was a change on the fly
         for dp in _mocked_datapoints:
             if not self._mocked_datapoints.__contains__(dp["path"]):
-                print(dp)
                 new_mock_data_exist = True
 
         if new_mock_data_exist:   
