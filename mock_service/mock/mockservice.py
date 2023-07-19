@@ -95,7 +95,7 @@ class MockService(BaseService):
             if not self._mocked_datapoints.__contains__(dp["path"]):
                 new_mock_data_exist = True
 
-        if new_mock_data_exist:   
+        if new_mock_data_exist:  
             loader_result = PythonDslLoader().load(self._vdb_metadata)
             self._mocked_datapoints = loader_result.mocked_datapoints
             for _, datapoint in self._mocked_datapoints.items():
@@ -107,7 +107,6 @@ class MockService(BaseService):
             )
             self._register_datapoints()
             self._subscribe_to_mocked_datapoints()
-            self._feed_initial_values()
             if self._registered is False:
                 self._register_datapoints()
                 self._registered = True
@@ -216,7 +215,6 @@ class MockService(BaseService):
             entry = SubscribeEntry(path=mocked_datapoint.path)
             if mocked_datapoint.data_type is not None:
                 entry.fields.append(Field.FIELD_ACTUATOR_TARGET)
-            else:
                 entry.fields.append(Field.FIELD_VALUE)
             request.entries.append(entry)
 
