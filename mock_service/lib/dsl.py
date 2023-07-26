@@ -12,12 +12,15 @@
 # ********************************************************************************/
 
 import logging
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Optional
 
 from lib.action import Action, ActionContext, AnimationAction, SetAction
 from lib.animator import RepeatMode
 from lib.behavior import Behavior, ExecutionContext
-from lib.trigger import EventTriggerResult, Trigger
+from lib.trigger import EventTriggerResult, Trigger, EventType, EventTrigger
+
+# Set the log level to suppress log messages because we call connect/disconnect of client quite often
+logging.getLogger("kuksa_client").setLevel(logging.WARNING)
 
 _mocked_datapoints: List[Dict] = list()
 _required_datapoint_paths: List[str] = list()
@@ -72,9 +75,12 @@ def get_datapoint_value(context: ExecutionContext, path: str, default: Any = 0) 
     """
     if path not in _mocked_datapoints:
         _required_datapoint_paths.append(path)
-
-    if path in context.datapoints_cache:
-        return context.datapoints_cache[path].value
+    context.client.connect()
+    curr_vals = context.client.get_current_values([path, ])
+    context.client.disconnect()
+    if curr_vals[path] != None:
+        return curr_vals[path].value
+    
     return default
 
 
@@ -98,9 +104,14 @@ def __resolve_value(action_context: ActionContext, value: Any) -> Any:
 
     if isinstance(value, str) and value.startswith("$"):
         if value == "$self":
-            return get_datapoint_value(
-                action_context.execution_context, action_context.datapoint.path
-            )
+            action_context.execution_context.client.connect()
+            curr_vals = action_context.execution_context.client.get_current_values([action_context.datapoint.path,])
+            action_context.execution_context.client.disconnect()
+            if curr_vals[action_context.datapoint.path] != None:
+                return curr_vals[action_context.datapoint.path].value
+            else:
+                return 0 
+            
         elif value == "$event.value":
             if isinstance(action_context.trigger, EventTriggerResult):
                 return action_context.trigger.get_event().value
@@ -109,8 +120,13 @@ def __resolve_value(action_context: ActionContext, value: Any) -> Any:
                     f"Unsupported literal: {value!r} in non event-triggered behavior!"
                 )
         elif value.startswith("$"):
-            return get_datapoint_value(action_context.execution_context, value[1:])
-
+            action_context.execution_context.client.connect()
+            curr_vals = action_context.execution_context.client.get_current_values([value[1:],])
+            action_context.execution_context.client.disconnect()
+            if curr_vals[value[1:]] != None:
+                return curr_vals[value[1:]].value
+            else:
+                return 0 
     return value
 
 
@@ -143,3 +159,18 @@ def create_animation_action(
         AnimationAction: The created AnimationAction.
     """
     return AnimationAction(duration, repeat_mode, values, __resolve_value)
+
+def create_EventTrigger(type: EventType, path: Optional[str] = None) -> EventTrigger:
+    """Create an EventTrigger for own VSS path or different one. It handles that events for the new VSS paths
+    are handled too and the EventTrigger works fine.
+
+    Args:
+        type (EvenType): The kind of event the EventTrigger shall be.
+        path (Optional[str]): Default None which represents same VSS path as the datapoint or new VSS path
+
+    Returns:
+        EvenTrigger: The created EventTrigger.
+    """
+    if path is not None:
+        _required_datapoint_paths.append(path)
+    return EventTrigger(type, path)
