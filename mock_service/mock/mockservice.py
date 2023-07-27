@@ -35,6 +35,18 @@ from kuksa_client.grpc import Metadata, Datapoint
 SERVICE_NAME = "mock_service"
 
 log = logging.getLogger(SERVICE_NAME)
+log.setLevel(logging.DEBUG)
+
+# Create a file handler and set the log file name
+file_handler = logging.FileHandler("mock_service.log")
+
+# Create a log formatter and set the format of log records
+formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+file_handler.setFormatter(formatter)
+
+# Add the file handler to the log
+log.addHandler(file_handler)
+
 event = threading.Event()
 
 # Mock Service bind "host:port"
@@ -87,7 +99,7 @@ class MockService(BaseService):
                 new_mock_data_exist = True
 
         if new_mock_data_exist:  
-            loader_result = PythonDslLoader().load(self._vdb_metadata)
+            loader_result = PythonDslLoader().load(self._client)
             self._mocked_datapoints = loader_result.mocked_datapoints
             for _, datapoint in self._mocked_datapoints.items():
                 datapoint.value_listener = self._on_datapoint_updated
@@ -96,10 +108,8 @@ class MockService(BaseService):
             self._behavior_executor = BehaviorExecutor(
                 self._mocked_datapoints, self._behaviors, self._pending_event_list
             )
-            self._register_datapoints()
             self._subscribe_to_mocked_datapoints()
             if self._registered is False:
-                self._register_datapoints()
                 self._registered = True
 
     def main_loop(self):
@@ -165,13 +175,13 @@ class MockService(BaseService):
     def _subscribe_to_mocked_datapoints(self):
         """Subscribe to mocked datapoints."""
         log.info("Subscribing to mocked datapoints...")
+        if self._mocked_datapoints:
+            response_iter_target = self._client.subscribe_target_values(self._mocked_datapoints)
+            response_iter_current = self._client.subscribe_current_values(self._mocked_datapoints)
 
-        response_iter_target = self._client.subscribe_target_values(self._mocked_datapoints)
-        response_iter_current = self._client.subscribe_current_values(self._mocked_datapoints)
-
-        self._executor = ThreadPoolExecutor()
-        self._executor.submit(self._mock_update_request_handler, response_iter_target, EVENT_KEY_ACTUATOR_TARGET)
-        self._executor.submit(self._mock_update_request_handler, response_iter_current, EVENT_KEY_VALUE)
+            self._executor = ThreadPoolExecutor()
+            self._executor.submit(self._mock_update_request_handler, response_iter_target, EVENT_KEY_ACTUATOR_TARGET)
+            self._executor.submit(self._mock_update_request_handler, response_iter_current, EVENT_KEY_VALUE)
 
     def _set_datapoint(self, path: str, value: Any):
         """Set the value of a datapoint within databroker."""
