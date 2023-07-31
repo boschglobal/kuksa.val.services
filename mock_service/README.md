@@ -92,6 +92,8 @@ cd mock
 python3 ../showcase_gui/GUI.py
 ```
 
+Depending on your Python installation, you might need to install Tk on your system (e.g. `brew install tkinter` for MacOs or `sudo apt install python3-tk` for Ubuntu).
+
 # Generating API documentation
 
 API documentation is generated from Python docs and embedded into markdown files for easy rendering on Github without external hosting. The workflow `ensure-docs-up2date` makes sure that the API docs are up to date before merging a pull request. To update the docs, run
