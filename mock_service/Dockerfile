@@ -12,7 +12,7 @@
 # ********************************************************************************/
 
 # Build stage, to create a Virtual Environent
-FROM python:3.11-slim-bullseye
+FROM python:3.12-slim-bullseye
 
 COPY . /
 
