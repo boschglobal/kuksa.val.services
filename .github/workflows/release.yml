@@ -93,7 +93,7 @@ jobs:
     steps:
       - id: repository-name-adjusted
         name: Prepare repository name in lower case for docker upload. This supports repository names in mixed case
-        uses: ASzc/change-string-case-action@v5
+        uses: ASzc/change-string-case-action@v6
         with:
           string: ${{ github.repository }}
 
@@ -129,7 +129,7 @@ jobs:
     steps:
       - id: repository-name-adjusted
         name: Prepare repository name in lower case for docker upload. This supports repository names in mixed case
-        uses: ASzc/change-string-case-action@v5
+        uses: ASzc/change-string-case-action@v6
         with:
           string: ${{ github.repository }}
 
@@ -165,7 +165,7 @@ jobs:
     steps:
       - id: repository-name-adjusted
         name: Prepare repository name in lower case for docker upload. This supports repository names in mixed case
-        uses: ASzc/change-string-case-action@v5
+        uses: ASzc/change-string-case-action@v6
         with:
           string: ${{ github.repository }}
 
