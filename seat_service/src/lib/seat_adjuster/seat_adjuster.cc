@@ -137,6 +137,9 @@ int SeatAdjusterImpl::GetSeatPosition() {
     auto pos = seatctrl_get_position(&ctx_);
     if (pos == MOTOR_POS_INVALID || pos < 0) { // (pos < 0) -> SEAT_CTRL_ERR_XXX
         pos = SEAT_POSITION_INVALID;  // considered as invalid value
+    } else {
+        // Quick fix: Reverse direction for CES 2024
+        pos = 100 - pos;
     }
     if (debug) {
         std::cerr << LOG_FN << "-> " << pos << std::endl;
@@ -152,6 +155,8 @@ int SeatAdjusterImpl::GetSeatPosition() {
  */
 SetResult SeatAdjusterImpl::SetSeatPosition(int positionInPercent) {
     std::cerr << LOG_FN << "setting seat position to " << positionInPercent << "%" << std::endl;
+    // Quick fix: Reverse direction for CES 2024
+    positionInPercent = 100 - positionInPercent;
     error_t rc = seatctrl_set_position(&ctx_, positionInPercent);
     if (rc == SEAT_CTRL_OK) {
         return SetResult::OK;
